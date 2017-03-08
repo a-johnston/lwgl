@@ -1,0 +1,9 @@
+*.bin
+*.out
+*.swp
+*.o
+*.gch
+bin/*
+docs/*
+include/*
+lib/*
