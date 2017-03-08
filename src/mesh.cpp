@@ -4,9 +4,8 @@
 
 #include "lwgl.hpp"
 
-lwgl::Mesh::Mesh(char *format) {
+lwgl::Mesh::Mesh(std::string format) {
     this->format = format;
-    this->flength = strlen(format);
 
     this->vert_vbo = -1;
     this->tri_vbo = -1;
@@ -16,15 +15,7 @@ lwgl::Mesh::Mesh(char *format) {
 }
 
 int lwgl::Mesh::get_attr_off(char a) {
-    char *f = this->format;
-
-    while (*f != '\0') {
-        if (*f == a) {
-            return (int) (f - this->format);
-        }
-    }
-
-    return -1;
+    return this->format.find(a);
 }
 
 int lwgl::Mesh::get_attr_id(char a, int vid) {
@@ -34,22 +25,22 @@ int lwgl::Mesh::get_attr_id(char a, int vid) {
         return -1;
     }
 
-    return vid * this->flength + offset;
+    return vid * this->format.length() + offset;
 }
 
 void lwgl::Mesh::set_attr(char a, int vid, glm::vec4 value) {
     this->verts[this->get_attr_id(a, vid)] = value;
 }
 
-int lwgl::Mesh::add_vertex(char *format, ...) {
-    int vid = this->verts.size() / this->flength;
-    this->verts.resize(this->verts.size() + this->flength, glm::vec4());
+int lwgl::Mesh::add_vertex(std::string format, ...) {
+    int vid = this->verts.size() / this->format.length();
+    this->verts.resize(this->verts.size() + this->format.length(), glm::vec4());
 
     va_list ap;
     va_start(ap, format);
 
-    while (*format != '\0') {
-        this->set_attr(*format, vid, va_arg(ap, glm::vec4));
+    for (char a : format) {
+        this->set_attr(a, vid, va_arg(ap, glm::vec4));
     }
 
     va_end(ap);
@@ -98,6 +89,24 @@ void lwgl::Mesh::unbuffer() {
 
     if (this->tri_vbo > 0) {
         free_buffer(this->tri_vbo);
+    }
+}
+
+void lwgl::Mesh::__print_debug() {
+    std::cout << "verts size\t: " << this->verts.size() << '\n';
+    std::cout << "tris size\t: " << this->tris.size() << '\n';
+    std::cout << "num verts\t: " << (this->verts.size() / this->format.length()) << '\n';
+    std::cout << "format\t\t: " << this->format << '\n';
+
+    int c = 0;
+    for (glm::vec4 val : this->verts) {
+        printf("%f %f %f %f", val.x, val.y, val.z, val.w);
+        c += 1;
+        if (c % this->format.size() == 0) {
+            printf("\n");
+        } else {
+            printf(" | ");
+        }
     }
 }
 

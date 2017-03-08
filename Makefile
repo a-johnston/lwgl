@@ -8,3 +8,6 @@ build: src/lwgl.hpp src/*.cpp
 install: lib/liblwgl.so include/lwgl.hpp
 	sudo cp lib/liblwgl.so /usr/lib/
 	sudo cp include/lwgl.hpp /usr/local/include/
+
+test: test.cpp
+	g++ -o test.bin test.cpp -g -Og -Wall -Werror -Wextra -llwgl -lglfw -lGL -lGLEW -lX11 -lXrandr -lXi -lXxf86vm -lpthread -lm

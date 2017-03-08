@@ -5,7 +5,10 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+
+#include <iostream>
 #include <vector>
+#include <string>
 
 #include <glm/glm.hpp>
 
@@ -23,19 +26,19 @@ class Mesh {
     GLuint vert_vbo;
     GLuint tri_vbo;
 
-    char *format;
-    int flength;
+    std::string format;
 
     std::vector<glm::vec4> verts;
     std::vector<glm::ivec3> tris;
 
     public:
-        Mesh(char *format);
-        int add_vertex(char *format, ...);
+        Mesh(std::string format);
+        int add_vertex(std::string format, ...);
         int add_tri(glm::ivec3);
         int add_tri(int, int, int);
         void buffer();
         void unbuffer();
+        void __print_debug();
     private:
         int get_attr_off(char a);
         int get_attr_id(char a, int vid);
