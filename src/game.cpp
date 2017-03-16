@@ -4,26 +4,45 @@
 
 #include "lwgl.hpp"
 
-// Actor base class
-
-void lwgl::Actor::load() {}
-
-void lwgl::Actor::unload() {}
-
-void lwgl::Actor::step(double delta_time) {
-    (void) delta_time;
+lwgl::Scene::Scene() {
+    this->actors = std::vector<Actor*>();
 }
 
-void lwgl::Actor::draw() {}
+void lwgl::Scene::add_actor(Actor *a) {
+    this->actors.push_back(a);
+}
 
-// Scene
-
-lwgl::Scene::Scene() {
-
+void lwgl::Scene::remove_actor(Actor *a) {
+    for (auto it = this->actors.begin(); it != this->actors.end();) {
+        if (*it == a) {
+            this->actors.erase(it);
+            return;
+        }
+    }
 }
 
 void lwgl::Scene::load() {
+    for (Actor *a : this->actors) {
+        a->load();
+    }
+}
 
+void lwgl::Scene::unload() {
+    for (Actor *a : this->actors) {
+        a->unload();
+    }
+}
+
+void lwgl::Scene::step(double delta_time) {
+    for (Actor *a : this->actors) {
+        a->step(delta_time);
+    }
+}
+
+void lwgl::Scene::draw() {
+    for (Actor *a : this->actors) {
+        a->draw();
+    }
 }
 
 #endif

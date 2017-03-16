@@ -52,6 +52,15 @@ void lwgl::add_key_callback(GLFWkeyfun f) {
     key_callbacks.push_back(f);
 }
 
+void lwgl::set_scene(Scene *s) {
+    if (scene) {
+        scene->unload();
+    }
+    if (s) {
+        s->load();
+    }
+    scene = s;
+}
 
 GLFWwindow *lwgl::make_window(int width, int height, std::string title) {
     if (window) {
@@ -135,12 +144,16 @@ void lwgl::start_main_loop() {
 
         temp = glfwGetTime();
         if (scene) {
-            scene->step(time - temp);
+            scene->step(temp - time);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             scene->draw();
+            glfwSwapBuffers(window);
         }
         time = temp;
     }
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
 }
 
 #endif

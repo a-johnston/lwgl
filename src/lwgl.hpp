@@ -91,16 +91,17 @@ class Mesh {
 
 class Actor {
     public:
-        void load();
-        void unload();
-        void step(double delta_time);
-        void draw();
+        virtual void load() = 0;
+        virtual void unload() = 0;
+        virtual void step(double delta_time) = 0;
+        virtual void draw() = 0;
 };
 
 class Scene {
     std::vector<Actor*> actors;
 
     friend void start_main_loop();
+    friend void set_scene(Scene*);
 
     public:
         Scene();
@@ -118,7 +119,7 @@ class Scene {
  */
 
 GLFWwindow *make_window(int width, int height, std::string title);
-void set_scene();
+void set_scene(Scene *scene);
 void start_main_loop();
 void add_key_callback(GLFWkeyfun f);
 int check_gl_error();
