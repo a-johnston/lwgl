@@ -7,8 +7,11 @@
 #include <string.h>
 
 #include <iostream>
+#include <fstream>
 #include <vector>
+#include <map>
 #include <string>
+#include <sstream>
 
 #include <glm/glm.hpp>
 
@@ -66,9 +69,30 @@ typedef struct {
 
 class Shader {
     GLuint vert, frag, prog;
-    std::vector<GLuint> attr_handles;
+    std::map<char, GLuint> attr_handles;
     std::vector<shader_uniform> uniforms;
+
+    public:
+        Shader(std::string vertex_filename, std::string fragment_filename);
+        ~Shader();
+        int map_attribute(char mesh_attr, std::string shader_attr);
+        shader_uniform *map_uniform(ShaderUniformType type, std::string handle, int count);
 };
+
+/*
+ * render.cpp
+ */
+
+GLFWwindow *make_window(int width, int height, std::string title);
+void add_key_callback(GLFWkeyfun f);
+
+/*
+ * io.cpp
+ */
+
+namespace io {
+    std::string read_file(std::string filename);
+}
 
 }
 
