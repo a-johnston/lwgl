@@ -1,15 +1,15 @@
-attribute vec3 position;
-attribute vec3 normal;
+attribute vec4 position;
+attribute vec4 normal;
 
 uniform mat4 mvp;
 uniform mat4 model;
 
-varying vec3 color;
-varying vec3 norm;
+varying vec4 color;
+varying vec4 norm;
 
 void main()
 {
-    norm = vec3(model * vec4(normal, 1.0));
-    color = position * 0.4 + vec3(0.5, 0.5, 0.5);
-    gl_Position = mvp * vec4(position, 1.0);
+    norm = model * normal;
+    color = position * 0.4 + vec4(0.5, 0.5, 0.5, 0.6);
+    gl_Position = mvp * position;
 }

@@ -6,6 +6,7 @@
 
 static GLFWwindow *window = NULL;
 static GLFWmonitor *monitor = NULL;
+static lwgl::Scene *scene = NULL;
 
 static int _width, _height;
 
@@ -21,6 +22,30 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
     for (GLFWkeyfun f : key_callbacks) {
         (*f)(window, key, scancode, action, mods);
     }
+}
+
+void lwgl::print_gl_log(
+    GLuint object,
+    PFNGLGETSHADERIVPROC glGet__iv,
+    PFNGLGETSHADERINFOLOGPROC glGet__InfoLog
+) {
+    GLint log_length;
+    glGet__iv(object, GL_INFO_LOG_LENGTH, &log_length);
+
+    char *log = (char*) malloc(log_length);
+    glGet__InfoLog(object, log_length, NULL, log);
+    std::cerr << log << '\n';
+    free(log);
+}
+
+int lwgl::check_gl_error() {
+    int err = glGetError();
+
+    if (err) {
+        std::cerr << "OpenGL Error " << err << '\n';
+    }
+
+    return err;
 }
 
 void lwgl::add_key_callback(GLFWkeyfun f) {
@@ -98,6 +123,24 @@ GLFWwindow *lwgl::make_window(int width, int height, std::string title) {
     key_callbacks = std::vector<GLFWkeyfun>();
 
     return window;
+}
+
+void lwgl::start_main_loop() {
+    glfwSetTime(0.0);
+    double temp, time = 0.0;
+
+    while (!glfwWindowShouldClose(window)) {
+        lwgl::check_gl_error();
+        glfwPollEvents();
+
+        temp = glfwGetTime();
+        if (scene) {
+            scene->step(time - temp);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            scene->draw();
+        }
+        time = temp;
+    }
 }
 
 #endif

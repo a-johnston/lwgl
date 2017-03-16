@@ -110,4 +110,47 @@ void lwgl::Mesh::__print_debug() {
     }
 }
 
+void lwgl::Mesh::bind_to_shader(Shader shader) {
+    int stride = this->format.length() * sizeof(glm::vec4);
+    GLvoid *pointer = 0;
+
+    glBindBuffer(GL_ARRAY_BUFFER, this->vert_vbo);
+    for (char a : this->format) {
+        if (shader.attr_handles.count(a)) {
+            glVertexAttribPointer(
+                shader.attr_handles[a],
+                4,
+                GL_FLOAT,
+                GL_FALSE,
+                stride,
+                (const GLvoid*) pointer
+            );
+            glEnableVertexAttribArray(shader.attr_handles[a]);
+        }
+        pointer = (GLvoid*) ((long) pointer + sizeof(glm::vec4));
+    }
+}
+
+void lwgl::Mesh::draw_mesh_tris() {
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->tri_vbo);
+    glDrawElements(GL_TRIANGLES, this->tris.size() * 3, GL_UNSIGNED_INT, 0);
+}
+
+void lwgl::Mesh::unbind_from_shader(Shader shader) {
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    for (char a : this->format) {
+        if (shader.attr_handles.count(a)) {
+            glDisableVertexAttribArray(shader.attr_handles[a]);
+        }
+    }
+}
+
+void lwgl::Mesh::draw(Shader shader) {
+    this->bind_to_shader(shader);
+    this->draw_mesh_tris();
+    this->unbind_from_shader(shader);
+}
+
 #endif

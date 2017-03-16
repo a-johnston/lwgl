@@ -1,16 +1,8 @@
 #include <lwgl.hpp>
 
-static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    (void) scancode;
-    (void) mods;
-    if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
-        glfwSetWindowShouldClose(window, GL_TRUE);
-    }
-}
-
 int main() {
     lwgl::make_window(640, 480, "test");
-    lwgl::add_key_callback(&key_callback);
+    lwgl::add_key_callback(&lwgl::util::quit_on_escape_keypress);
 
     lwgl::Mesh mesh = lwgl::Mesh("vnc");
     lwgl::Shader shader = lwgl::Shader("assets/color_vertex.glsl", "assets/color_fragment.glsl");
@@ -31,6 +23,9 @@ int main() {
     mesh.add_tri(i, j, k);
 
     mesh.__print_debug();
+
+    mesh.buffer();
+    mesh.draw(shader);
 
     return 0;
 }

@@ -17,7 +17,9 @@ static GLuint make_shader_component(GLenum type, std::string filename) {
     glGetShaderiv(shader, GL_COMPILE_STATUS, &shader_ok);
 
     if (!shader_ok) {
-        std::cerr << "Failed to compile " << filename << 'n';
+        std::cerr << "Failed to compile " << filename << "\n\n";
+        lwgl::print_gl_log(shader, glGetShaderiv, glGetShaderInfoLog);
+
         glDeleteShader(shader);
         return 0;
     }
@@ -36,7 +38,9 @@ static GLuint make_shader_program(GLuint vertex, GLuint fragment) {
     glGetProgramiv(program, GL_LINK_STATUS, &program_ok);
 
     if (!program_ok) {
-        std::cerr << "Failed to link shader program\n";
+        std::cerr << "Failed to link shader program\n\n";
+        lwgl::print_gl_log(program, glGetProgramiv, glGetProgramInfoLog);
+
         glDeleteProgram(program);
         return 0;
     }

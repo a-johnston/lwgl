@@ -22,33 +22,6 @@
 namespace lwgl {
 
 /*
- * mesh.cpp
- */
-
-class Mesh {
-    GLuint vert_vbo;
-    GLuint tri_vbo;
-
-    std::string format;
-
-    std::vector<glm::vec4> verts;
-    std::vector<glm::ivec3> tris;
-
-    public:
-        Mesh(std::string format);
-        int add_vertex(std::string format, ...);
-        int add_tri(glm::ivec3);
-        int add_tri(int, int, int);
-        void buffer();
-        void unbuffer();
-        void __print_debug();
-    private:
-        int get_attr_off(char a);
-        int get_attr_id(char a, int vid);
-        void set_attr(char a, int vid, glm::vec4 value);
-};
-
-/*
  * shader.cpp
  */
 
@@ -72,6 +45,8 @@ class Shader {
     std::map<char, GLuint> attr_handles;
     std::vector<shader_uniform> uniforms;
 
+    friend class Mesh;
+
     public:
         Shader(std::string vertex_filename, std::string fragment_filename);
         ~Shader();
@@ -80,11 +55,74 @@ class Shader {
 };
 
 /*
+ * mesh.cpp
+ */
+
+class Mesh {
+    GLuint vert_vbo;
+    GLuint tri_vbo;
+
+    std::string format;
+
+    std::vector<glm::vec4> verts;
+    std::vector<glm::ivec3> tris;
+
+    public:
+        Mesh(std::string format);
+        int add_vertex(std::string format, ...);
+        int add_tri(glm::ivec3);
+        int add_tri(int, int, int);
+        void buffer();
+        void unbuffer();
+        void draw(Shader shader);
+        void __print_debug();
+    private:
+        int get_attr_off(char a);
+        int get_attr_id(char a, int vid);
+        void set_attr(char a, int vid, glm::vec4 value);
+        void bind_to_shader(Shader shader);
+        void draw_mesh_tris();
+        void unbind_from_shader(Shader shader);
+};
+
+/*
+ * game.cpp
+ */
+
+class Actor {
+    public:
+        void load();
+        void unload();
+        void step(double delta_time);
+        void draw();
+};
+
+class Scene {
+    std::vector<Actor*> actors;
+
+    friend void start_main_loop();
+
+    public:
+        Scene();
+        void add_actor(Actor *actor);
+        void remove_actor(Actor *actor);
+    private:
+        void load();
+        void unload();
+        void step(double delta_time);
+        void draw();
+};
+
+/*
  * render.cpp
  */
 
 GLFWwindow *make_window(int width, int height, std::string title);
+void set_scene();
+void start_main_loop();
 void add_key_callback(GLFWkeyfun f);
+int check_gl_error();
+void print_gl_log(GLuint, PFNGLGETSHADERIVPROC, PFNGLGETSHADERINFOLOGPROC);
 
 /*
  * io.cpp
@@ -92,6 +130,15 @@ void add_key_callback(GLFWkeyfun f);
 
 namespace io {
     std::string read_file(std::string filename);
+}
+
+/*
+ * util.cpp
+ */
+
+namespace util {
+    lwgl::Mesh make_cube();
+    void quit_on_escape_keypress(GLFWwindow*, int, int, int, int);
 }
 
 }
