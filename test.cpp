@@ -20,7 +20,7 @@ class TestActor : public lwgl::Actor {
         void unload() {}
 
         void step(double delta_time) {
-            std::cout << delta_time << '\n';
+            (void) delta_time;
         }
 
         void draw() {

@@ -63,6 +63,12 @@ void lwgl::set_scene(Scene *s) {
 }
 
 GLFWwindow *lwgl::make_window(int width, int height, std::string title) {
+    Mesh::set_attr_size(lwgl::POSITION, 3);
+    Mesh::set_attr_size(lwgl::NORMAL, 3);
+    Mesh::set_attr_size(lwgl::BINORMAL, 3);
+    Mesh::set_attr_size(lwgl::TEXCOORD, 2);
+    Mesh::set_attr_size(lwgl::COLOR, 4);
+
     if (window) {
         return window;
     }

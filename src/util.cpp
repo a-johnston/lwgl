@@ -5,7 +5,20 @@
 #include "lwgl.hpp"
 
 lwgl::Mesh lwgl::util::make_cube() {
-    lwgl::Mesh cube = lwgl::Mesh("vn");
+    lwgl::Mesh cube = lwgl::Mesh(2, lwgl::POSITION, lwgl::NORMAL);
+/*
+    glm::vec4 p[] = {
+        glm::vec4(-1, -1, -1, 1),
+        glm::vec4( 1, -1, -1, 1),
+        glm::vec4(-1,  1, -1, 1),
+        glm::vec4( 1,  1, -1, 1),
+        glm::vec4(-1, -1,  1, 1),
+        glm::vec4( 1, -1,  1, 1),
+        glm::vec4(-1,  1,  1, 1),
+        glm::vec4( 1,  1,  1, 1)
+    };
+*/
+
 
     return cube;
 }

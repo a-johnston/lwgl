@@ -19,6 +19,10 @@
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 
+#define LWGL_MAX_VERTEX_ATTR 32
+typedef int LWGL_VERTEX_ATTR;
+typedef int LWGL_VERTEX_ATTR_SIZE;
+
 namespace lwgl {
 
 /*
@@ -42,7 +46,7 @@ typedef struct {
 
 class Shader {
     GLuint vert, frag, prog;
-    std::map<char, GLuint> attr_handles;
+    std::map<LWGL_VERTEX_ATTR, GLuint> attr_handles;
     std::vector<shader_uniform> uniforms;
 
     friend class Mesh;
@@ -50,7 +54,7 @@ class Shader {
     public:
         Shader(std::string vertex_filename, std::string fragment_filename);
         ~Shader();
-        int map_attribute(char mesh_attr, std::string shader_attr);
+        int map_attribute(LWGL_VERTEX_ATTR mesh_attr, std::string shader_attr);
         shader_uniform *map_uniform(ShaderUniformType type, std::string handle, int count);
 };
 
@@ -58,28 +62,42 @@ class Shader {
  * mesh.cpp
  */
 
+enum VertexAttr {
+    POSITION = 0,
+    NORMAL,
+    BINORMAL,
+    TEXCOORD,
+    COLOR
+};
+
 class Mesh {
+    // maxnum restricted by GL_MAX_VERTEX_ATTRIBS
+    static LWGL_VERTEX_ATTR ATTR_SIZES[LWGL_MAX_VERTEX_ATTR];
+
     GLuint vert_vbo;
     GLuint tri_vbo;
 
-    std::string format;
+    std::vector<LWGL_VERTEX_ATTR> format;
+    int vertex_spec_size;
 
-    std::vector<glm::vec4> verts;
+    std::vector<float> verts;
     std::vector<glm::ivec3> tris;
 
     public:
-        Mesh(std::string format);
-        int add_vertex(std::string format, ...);
+        Mesh(int num_attrs, ...);
+        int add_vertex(int num_attrs, ...);
         int add_tri(glm::ivec3);
         int add_tri(int, int, int);
         void buffer();
         void unbuffer();
         void draw(Shader shader);
         void __print_debug();
+        static void set_attr_size(LWGL_VERTEX_ATTR, LWGL_VERTEX_ATTR_SIZE);
+        static LWGL_VERTEX_ATTR_SIZE get_attr_size(LWGL_VERTEX_ATTR);
     private:
-        int get_attr_off(char a);
-        int get_attr_id(char a, int vid);
-        void set_attr(char a, int vid, glm::vec4 value);
+        int get_attr_off(LWGL_VERTEX_ATTR attr);
+        int get_attr_id(LWGL_VERTEX_ATTR attr, int vid);
+        void set_attr(LWGL_VERTEX_ATTR attr, int vid, ...);
         void bind_to_shader(Shader shader);
         void draw_mesh_tris();
         void unbind_from_shader(Shader shader);

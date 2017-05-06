@@ -54,7 +54,7 @@ lwgl::Shader::Shader(std::string vertex, std::string fragment) {
     this->prog = make_shader_program(this->vert, this->frag);
 
 
-    this->attr_handles = std::map<char, GLuint>();
+    this->attr_handles = std::map<LWGL_VERTEX_ATTR, GLuint>();
     this->uniforms = std::vector<shader_uniform>();
 }
 
@@ -64,7 +64,7 @@ lwgl::Shader::~Shader() {
     glDeleteProgram(this->prog);
 }
 
-int lwgl::Shader::map_attribute(char mesh_attr, std::string shader_attr) {
+int lwgl::Shader::map_attribute(LWGL_VERTEX_ATTR mesh_attr, std::string shader_attr) {
     int temp = glGetAttribLocation(this->prog, shader_attr.c_str());
 
     if (temp >= 0) {

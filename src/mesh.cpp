@@ -4,48 +4,114 @@
 
 #include "lwgl.hpp"
 
-lwgl::Mesh::Mesh(std::string format) {
-    this->format = format;
+static glm::vec4 unload_vec(int n, va_list ap) {
+    if (n == 2) {
+        return glm::vec4(va_arg(ap, glm::vec2), 0, 0);
+    } else if (n == 3) {
+        return glm::vec4(va_arg(ap, glm::vec3), 0);
+    } else if (n == 4) {
+        return va_arg(ap, glm::vec4);
+    }
+    return glm::vec4(0);
+}
+
+lwgl::Mesh::Mesh(int num_attrs, ...) {
+    va_list ap;
+    va_start(ap, num_attrs);
+
+    for (int i = 0; i < num_attrs; i++) {
+        LWGL_VERTEX_ATTR attr = va_arg(ap, LWGL_VERTEX_ATTR);
+        this->format.push_back(attr);
+        this->vertex_spec_size += lwgl::Mesh::get_attr_size(attr);
+    }
+
+    va_end(ap);
 
     this->vert_vbo = -1;
     this->tri_vbo = -1;
 
-    this->verts = std::vector<glm::vec4>();
+    this->verts = std::vector<float>();
     this->tris = std::vector<glm::ivec3>();
 }
 
-int lwgl::Mesh::get_attr_off(char a) {
-    return this->format.find(a);
+void lwgl::Mesh::set_attr_size(LWGL_VERTEX_ATTR attr, LWGL_VERTEX_ATTR_SIZE size) {
+    if (lwgl::Mesh::ATTR_SIZES[attr] == 0) {
+        if (size > 0 && size < 5) {
+            lwgl::Mesh::ATTR_SIZES[attr] = size;
+        } else {
+            std::cerr << "Illegal size value " << size << " must be in [1, 2, 3, 4].\n";
+        }
+    } else {
+        std::cerr << "Can't redefine attribute size for " << attr << '\n';
+    }
 }
 
-int lwgl::Mesh::get_attr_id(char a, int vid) {
-    int offset = this->get_attr_off(a);
+LWGL_VERTEX_ATTR_SIZE lwgl::Mesh::get_attr_size(LWGL_VERTEX_ATTR attr) {
+    if (lwgl::Mesh::ATTR_SIZES[attr] == 0) {
+        std::cerr << "Reading unset attribute size for attribute " << attr << '\n';
+    }
+    return lwgl::Mesh::ATTR_SIZES[attr];
+}
+
+/*
+int lwgl::Mesh::get_attr_off(LWGL_VERTEX_ATTR attr) {
+    int off = 0;
+
+    for (LWGL_VERTEX_ATTR a : this->format) {
+        if (a == attr) {
+            return off;
+        }
+
+        off += lwgl::Mesh::get_attr_size(a);
+    }
+
+    return -1;
+}
+
+int lwgl::Mesh::get_attr_id(LWGL_VERTEX_ATTR attr, int vid) {
+    int offset = this->get_attr_off(attr);
 
     if (offset == -1) {
         return -1;
     }
 
-    return vid * this->format.length() + offset;
+    return vid * this->vertex_spec_size + offset;
 }
 
-void lwgl::Mesh::set_attr(char a, int vid, glm::vec4 value) {
-    this->verts[this->get_attr_id(a, vid)] = value;
-}
-
-int lwgl::Mesh::add_vertex(std::string format, ...) {
-    int vid = this->verts.size() / this->format.length();
-    this->verts.resize(this->verts.size() + this->format.length(), glm::vec4());
+void lwgl::Mesh::set_attr(LWGL_VERTEX_ATTR attr, int vid, ...) {
+    int idx = this->get_attr_id(attr, vid);
 
     va_list ap;
-    va_start(ap, format);
+    va_start(ap, vid);
 
-    for (char a : format) {
-        this->set_attr(a, vid, va_arg(ap, glm::vec4));
+    for (int i = 0; i < lwgl::Mesh::get_attr_size(attr); i++) {
+        this->verts[idx + i] = va_arg(ap, float);
+    }
+
+    va_end(ap);
+}
+*/
+
+int lwgl::Mesh::add_vertex(int num_attrs, ...) {
+    int idx = this->verts.size();
+    this->verts.resize(this->verts.size() + this->vertex_spec_size, 0.0f);
+
+    va_list ap;
+    va_start(ap, num_attrs);
+
+    glm::vec4 vec;
+    for (LWGL_VERTEX_ATTR a : format) {
+        int size = lwgl::Mesh::get_attr_size(a);
+        vec = unload_vec(size, ap);
+
+        for (int i = 0; i < size; i++) {
+            this->verts[idx + i] = vec[i];
+        }
     }
 
     va_end(ap);
 
-    return vid;
+    return idx / this->vertex_spec_size;
 }
 
 int lwgl::Mesh::add_tri(glm::ivec3 tri) {
@@ -73,7 +139,7 @@ void lwgl::Mesh::buffer() {
     this->unbuffer();
     this->vert_vbo = make_buffer(
         this->verts.data(),
-        this->verts.size() * sizeof(glm::vec4)
+        this->verts.size() * sizeof(float)
     );
 
     this->tri_vbo = make_buffer(
@@ -95,27 +161,26 @@ void lwgl::Mesh::unbuffer() {
 void lwgl::Mesh::__print_debug() {
     std::cout << "verts size\t: " << this->verts.size() << '\n';
     std::cout << "tris size\t: " << this->tris.size() << '\n';
-    std::cout << "num verts\t: " << (this->verts.size() / this->format.length()) << '\n';
-    std::cout << "format\t\t: " << this->format << '\n';
+    std::cout << "num verts\t: " << (this->verts.size() / this->vertex_spec_size) << '\n';
 
     int c = 0;
-    for (glm::vec4 val : this->verts) {
-        printf("%f %f %f %f", val.x, val.y, val.z, val.w);
+    for (float val : this->verts) {
+        std::cout << val;
         c += 1;
-        if (c % this->format.size() == 0) {
-            printf("\n");
+        if (c % this->vertex_spec_size == 0) {
+            std::cout << '\n';
         } else {
-            printf(" | ");
+            std::cout << " | ";
         }
     }
 }
 
 void lwgl::Mesh::bind_to_shader(Shader shader) {
-    int stride = this->format.length() * sizeof(glm::vec4);
-    GLvoid *pointer = 0;
+    int stride = this->vertex_spec_size;
+    long pointer = 0;
 
     glBindBuffer(GL_ARRAY_BUFFER, this->vert_vbo);
-    for (char a : this->format) {
+    for (LWGL_VERTEX_ATTR a : this->format) {
         if (shader.attr_handles.count(a)) {
             glVertexAttribPointer(
                 shader.attr_handles[a],
@@ -127,7 +192,7 @@ void lwgl::Mesh::bind_to_shader(Shader shader) {
             );
             glEnableVertexAttribArray(shader.attr_handles[a]);
         }
-        pointer = (GLvoid*) ((long) pointer + sizeof(glm::vec4));
+        pointer += lwgl::Mesh::get_attr_size(a);
     }
 }
 
@@ -140,7 +205,7 @@ void lwgl::Mesh::unbind_from_shader(Shader shader) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    for (char a : this->format) {
+    for (LWGL_VERTEX_ATTR a : this->format) {
         if (shader.attr_handles.count(a)) {
             glDisableVertexAttribArray(shader.attr_handles[a]);
         }
