@@ -24,6 +24,10 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
     }
 }
 
+float lwgl::get_aspect_ratio() {
+    return (float) _width / (float) _height;
+}
+
 void lwgl::print_gl_log(
     GLuint object,
     PFNGLGETSHADERIVPROC glGet__iv,
@@ -38,14 +42,29 @@ void lwgl::print_gl_log(
     free(log);
 }
 
-int lwgl::check_gl_error() {
-    int err = glGetError();
+static std::string err_str[] = {
+    "GL Invalid Enum",
+    "GL Invalid Value",
+    "GL Invalid Operation",
+    "GL Stack Overflow",
+    "GL Stack Underflow",
+    "GL Out Of Memory",
+    "GL Invalid Framebuffer Operation",
+    "GL Context Lost",
+    "GL Table Too Large"
+};
 
-    if (err) {
-        std::cerr << "OpenGL Error " << err << '\n';
+void lwgl::__check_gl_error(const char *file, int line) {
+    lwgl::__check_gl_error(file, line, "");
+}
+
+void lwgl::__check_gl_error(const char *file, int line, const char *code) {
+    int err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << err << ' ' << err_str[err - GL_INVALID_ENUM] << " - "
+            << file << ':' << line << " - "
+            << '\t' << code << '\n';
     }
-
-    return err;
 }
 
 void lwgl::add_key_callback(GLFWkeyfun f) {
@@ -145,7 +164,6 @@ void lwgl::start_main_loop() {
     double temp, time = 0.0;
 
     while (!glfwWindowShouldClose(window)) {
-        lwgl::check_gl_error();
         glfwPollEvents();
 
         temp = glfwGetTime();

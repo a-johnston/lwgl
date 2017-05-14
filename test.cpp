@@ -6,13 +6,17 @@ class TestActor : public lwgl::Actor {
 
     public:
         TestActor() {
-            this->shader.map_attribute('v', "position");
-            this->shader.map_attribute('n', "normal");
+            lwgl::Camera camera;
 
-            this->shader.map_uniform(lwgl::MATRIX_4FV, "mvp", 1);
-            this->shader.map_uniform(lwgl::MATRIX_4FV, "model", 1);
+            this->shader.map_attribute(lwgl::POSITION, "position");
+            this->shader.map_attribute(lwgl::NORMAL, "normal");
+
+            this->shader.map_uniform("mvp", lwgl::MATRIX_4FV);
+            this->shader.set_uniform("mvp", camera.mvp(glm::mat4(1)));
 
             this->mesh.buffer();
+
+            this->mesh.__print_debug();
         }
 
         void load() {}
@@ -24,7 +28,7 @@ class TestActor : public lwgl::Actor {
         }
 
         void draw() {
-            this->mesh.draw(this->shader);
+            wrap_gl_error(this->mesh.draw(this->shader));
         }
 };
 

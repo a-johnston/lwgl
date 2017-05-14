@@ -2,8 +2,8 @@ build: src/lwgl.hpp src/*.cpp
 	mkdir -p include bin lib
 	cp src/lwgl.hpp include/lwgl.hpp
 	cd bin/; \
-	g++ -fpic -flto -fno-strict-aliasing -Os -Wall -Werror -Wextra -c ../src/*.cpp ../src/lwgl.hpp ;\
-	g++ -shared -fpic -flto -fno-strict-aliasing -Os -Wall -Werror -Wextra -o ../lib/liblwgl.so *.o -lc
+	g++ -g -fpic -flto -fno-strict-aliasing -Wall -Werror -Wextra -c ../src/*.cpp ../src/lwgl.hpp ;\
+	g++ -g -shared -fpic -flto -fno-strict-aliasing -Wall -Werror -Wextra -o ../lib/liblwgl.so *.o -lc
 
 install: lib/liblwgl.so include/lwgl.hpp
 	sudo cp lib/liblwgl.so /usr/lib/

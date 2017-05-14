@@ -9,17 +9,20 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <sstream>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 
 #define LWGL_MAX_VERTEX_ATTR 32
+#define check_gl_error() lwgl::__check_gl_error(__FILE__,__LINE__)
+#define wrap_gl_error(CODE) if (1) { CODE; lwgl::__check_gl_error(__FILE__,__LINE__, #CODE); }
 typedef int LWGL_VERTEX_ATTR;
 typedef int LWGL_VERTEX_ATTR_SIZE;
 
@@ -36,18 +39,16 @@ enum ShaderUniformType {
     TEXTURE_2D
 };
 
-typedef void (*_uniform_setter)(GLuint, int, void*);
-
 typedef struct {
-    GLuint handle;
+    ShaderUniformType type;
+    GLint handle;
     int count;
-    _uniform_setter func;
 } shader_uniform;
 
 class Shader {
     GLuint vert, frag, prog;
-    std::map<LWGL_VERTEX_ATTR, GLuint> attr_handles;
-    std::vector<shader_uniform> uniforms;
+    std::unordered_map<LWGL_VERTEX_ATTR, GLuint> attr_handles;
+    std::unordered_map<std::string, shader_uniform> uniforms;
 
     friend class Mesh;
 
@@ -55,7 +56,8 @@ class Shader {
         Shader(std::string vertex_filename, std::string fragment_filename);
         ~Shader();
         int map_attribute(LWGL_VERTEX_ATTR mesh_attr, std::string shader_attr);
-        shader_uniform *map_uniform(ShaderUniformType type, std::string handle, int count);
+        int map_uniform(std::string, ShaderUniformType, int=1);
+        int set_uniform(std::string, ...);
 };
 
 /*
@@ -71,33 +73,40 @@ enum VertexAttr {
 };
 
 class Mesh {
-    // maxnum restricted by GL_MAX_VERTEX_ATTRIBS
-    static LWGL_VERTEX_ATTR ATTR_SIZES[LWGL_MAX_VERTEX_ATTR];
-
     GLuint vert_vbo;
     GLuint tri_vbo;
-
-    std::vector<LWGL_VERTEX_ATTR> format;
-    int vertex_spec_size;
 
     std::vector<float> verts;
     std::vector<glm::ivec3> tris;
 
     public:
-        Mesh(int num_attrs, ...);
-        int add_vertex(int num_attrs, ...);
+        std::vector<LWGL_VERTEX_ATTR> format;
+        std::unordered_map<LWGL_VERTEX_ATTR, int> attr_offset;
+        int vertex_spec_size;
+
+        Mesh(std::vector<LWGL_VERTEX_ATTR>);
+
+        int add_vertex(std::vector<LWGL_VERTEX_ATTR>, ...);
+
         int add_tri(glm::ivec3);
         int add_tri(int, int, int);
+        int add_quad(glm::ivec4);
+        int add_quad(int, int, int, int);
+
+        int build_tri(glm::vec3, glm::vec3, glm::vec3);
+        int build_tri(glm::ivec3, glm::vec3*);
+        int build_quad(glm::vec3, glm::vec3, glm::vec3, glm::vec3);
+        int build_quad(glm::ivec4, glm::vec3*);
+
         void buffer();
         void unbuffer();
         void draw(Shader shader);
+
         void __print_debug();
+
         static void set_attr_size(LWGL_VERTEX_ATTR, LWGL_VERTEX_ATTR_SIZE);
         static LWGL_VERTEX_ATTR_SIZE get_attr_size(LWGL_VERTEX_ATTR);
     private:
-        int get_attr_off(LWGL_VERTEX_ATTR attr);
-        int get_attr_id(LWGL_VERTEX_ATTR attr, int vid);
-        void set_attr(LWGL_VERTEX_ATTR attr, int vid, ...);
         void bind_to_shader(Shader shader);
         void draw_mesh_tris();
         void unbind_from_shader(Shader shader);
@@ -132,6 +141,29 @@ class Scene {
         void draw();
 };
 
+class Camera {
+    glm::mat4 view;
+    glm::mat4 pers;
+    glm::mat4 vp;
+
+    public:
+        glm::vec3 from, to, up;
+        float fov, aspect, znear, zfar;
+
+        Camera(
+            glm::vec3 = glm::vec3(5, 5, 5),
+            glm::vec3 = glm::vec3(0, 0, 0),
+            glm::vec3 = glm::vec3(0, 0, 1),
+            float = 90.0f,
+            float = 0.0f,
+            float = 0.1f,
+            float = 100.0f);
+
+        void update_view();
+        void update_pers();
+        glm::mat4 mvp(glm::mat4 model);
+};
+
 /*
  * render.cpp
  */
@@ -140,8 +172,10 @@ GLFWwindow *make_window(int width, int height, std::string title);
 void set_scene(Scene *scene);
 void start_main_loop();
 void add_key_callback(GLFWkeyfun f);
-int check_gl_error();
+void __check_gl_error(const char *file, int line);
+void __check_gl_error(const char *file, int line, const char *code);
 void print_gl_log(GLuint, PFNGLGETSHADERIVPROC, PFNGLGETSHADERINFOLOGPROC);
+float get_aspect_ratio();
 
 /*
  * io.cpp
@@ -157,7 +191,13 @@ namespace io {
 
 namespace util {
     lwgl::Mesh make_cube();
+    lwgl::Mesh make_plane();
+    lwgl::Mesh make_subdivided_plane(int n);
     void quit_on_escape_keypress(GLFWwindow*, int, int, int, int);
+
+    glm::vec3 get_normal(glm::vec3, glm::vec3, glm::vec3);
+    glm::vec3 get_normal(glm::ivec3 idx, glm::vec3 *v);
+    glm::vec3 get_normal(glm::ivec4 idx, glm::vec3 *v);
 }
 
 }
