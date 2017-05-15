@@ -86,7 +86,15 @@ class Mesh {
 
         Mesh(std::vector<LWGL_VERTEX_ATTR>);
 
+        int get_num_verts();
+        int get_num_tris();
+
         int add_vertex(std::vector<LWGL_VERTEX_ATTR>, ...);
+        void set_vertex(int, std::vector<LWGL_VERTEX_ATTR>, va_list);
+        void set_vertex(int, std::vector<LWGL_VERTEX_ATTR>, ...);
+        void set_vertex_attr(int, LWGL_VERTEX_ATTR, va_list);
+        void set_vertex_attr(int, LWGL_VERTEX_ATTR, ...);
+        void *get_vertex(int, LWGL_VERTEX_ATTR);
 
         int add_tri(glm::ivec3);
         int add_tri(int, int, int);
@@ -97,6 +105,10 @@ class Mesh {
         int build_tri(glm::ivec3, glm::vec3*);
         int build_quad(glm::vec3, glm::vec3, glm::vec3, glm::vec3);
         int build_quad(glm::ivec4, glm::vec3*);
+
+        void translate(glm::vec3);
+        void scale(glm::vec3);
+        void scale(float);
 
         void buffer();
         void unbuffer();
@@ -151,7 +163,7 @@ class Camera {
         float fov, aspect, znear, zfar;
 
         Camera(
-            glm::vec3 = glm::vec3(5, 5, 5),
+            glm::vec3 = glm::vec3(2, 2, 2),
             glm::vec3 = glm::vec3(0, 0, 0),
             glm::vec3 = glm::vec3(0, 0, 1),
             float = 90.0f,
@@ -196,6 +208,7 @@ namespace util {
     void quit_on_escape_keypress(GLFWwindow*, int, int, int, int);
 
     glm::vec3 get_normal(glm::vec3, glm::vec3, glm::vec3);
+    glm::vec3 get_normal(glm::vec3, glm::vec3, glm::vec3, glm::vec3);
     glm::vec3 get_normal(glm::ivec3 idx, glm::vec3 *v);
     glm::vec3 get_normal(glm::ivec4 idx, glm::vec3 *v);
 }

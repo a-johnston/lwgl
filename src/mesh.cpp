@@ -54,30 +54,67 @@ LWGL_VERTEX_ATTR_SIZE lwgl::Mesh::get_attr_size(LWGL_VERTEX_ATTR attr) {
     return ATTR_SIZES[attr];
 }
 
+int lwgl::Mesh::get_num_verts() {
+    return this->verts.size() / this->vertex_spec_size;
+}
+
+int lwgl::Mesh::get_num_tris() {
+    return this->tris.size();
+}
+
 int lwgl::Mesh::add_vertex(std::vector<LWGL_VERTEX_ATTR> format, ...) {
-    int idx = this->verts.size();
+    int vid = this->get_num_verts();
     this->verts.resize(this->verts.size() + this->vertex_spec_size, 0.0f);
 
     va_list ap;
     va_start(ap, format);
-
-    glm::vec4 vec;
-    for (LWGL_VERTEX_ATTR a : format) {
-        if (this->attr_offset.count(a) == 0) {
-            continue;
-        }
-
-        int size = lwgl::Mesh::get_attr_size(a);
-        vec = unload_vec(size, ap);
-
-        for (int i = 0; i < size; i++) {
-            this->verts[idx + this->attr_offset[a] + i] = vec[i];
-        }
-    }
-
+    this->set_vertex(vid, format, ap);
     va_end(ap);
 
-    return idx / this->vertex_spec_size;
+    return vid;
+}
+
+void lwgl::Mesh::set_vertex(int vid, std::vector<LWGL_VERTEX_ATTR> format, ...) {
+    va_list ap;
+    va_start(ap, format);
+    this->set_vertex(vid, format, ap);
+    va_end(ap);
+}
+
+void lwgl::Mesh::set_vertex(int vid, std::vector<LWGL_VERTEX_ATTR> format, va_list ap) {
+    for (LWGL_VERTEX_ATTR attr : format) {
+        this->set_vertex_attr(vid, attr, ap);
+    }
+}
+
+void lwgl::Mesh::set_vertex_attr(int vid, LWGL_VERTEX_ATTR attr, ...) {
+    va_list ap;
+    va_start(ap, attr);
+    this->set_vertex_attr(vid, attr, ap);
+    va_end(ap);
+}
+
+void lwgl::Mesh::set_vertex_attr(int vid, LWGL_VERTEX_ATTR attr, va_list ap) {
+    float *vertex = (float*) this->get_vertex(vid, attr);
+
+    if (!vertex) {
+        return;
+    }
+
+    int size = lwgl::Mesh::get_attr_size(attr);
+    glm::vec4 vec = unload_vec(size, ap);
+
+    for (int i = 0; i < size; i++) {
+        vertex[i] = vec[i];
+    }
+}
+
+void *lwgl::Mesh::get_vertex(int vid, LWGL_VERTEX_ATTR attr) {
+    if (this->attr_offset.count(attr) == 0) {
+        return NULL;
+    }
+
+    return &this->verts[vid * this->vertex_spec_size + this->attr_offset[attr]];
 }
 
 int lwgl::Mesh::add_tri(glm::ivec3 tri) {
@@ -114,7 +151,7 @@ int lwgl::Mesh::build_tri(glm::ivec3 tri, glm::vec3 *p) {
 }
 
 int lwgl::Mesh::build_quad(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 d) {
-    glm::vec3 norm = lwgl::util::get_normal(a, b, c);
+    glm::vec3 norm = lwgl::util::get_normal(a, b, c, d);
     std::vector<LWGL_VERTEX_ATTR> format = { POSITION, NORMAL, TEXCOORD };
 
     return this->add_quad({
@@ -125,8 +162,8 @@ int lwgl::Mesh::build_quad(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 d) {
     });
 }
 
-int lwgl::Mesh::build_quad(glm::ivec4 tri, glm::vec3 *p) {
-    return this->build_quad(p[tri.x], p[tri.y], p[tri.z], p[tri.w]);
+int lwgl::Mesh::build_quad(glm::ivec4 quad, glm::vec3 *p) {
+    return this->build_quad(p[quad.x], p[quad.y], p[quad.z], p[quad.w]);
 }
 
 static GLuint make_buffer(const void *buffer_data, GLsizei buffer_size) {
@@ -135,6 +172,31 @@ static GLuint make_buffer(const void *buffer_data, GLsizei buffer_size) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, buffer_size, buffer_data, GL_STATIC_DRAW);
     return buffer;
+}
+
+// TODO: this rewrite actually could pretty easily support homogeneous
+// position coordinates, which I'm sure would be useful to people who actually
+// knew how to do interesting things, but hardcoding attributes such as in the
+// following methods makes these methods unnecessarily incompatible with using
+// homogeneous coordinates, ironically. Potentially, there could be overloaded
+// versions which accepted glm::vec4, but that isn't a very intuitive solution.
+
+void lwgl::Mesh::translate(glm::vec3 vec) {
+    for (int i = 0; i < this->get_num_verts(); i++) {
+        *((glm::vec3*) this->get_vertex(i, lwgl::POSITION)) += vec;
+    }
+}
+
+void lwgl::Mesh::scale(glm::vec3 vec) {
+    for (int i = 0; i < this->get_num_verts(); i++) {
+        *((glm::vec3*) this->get_vertex(i, lwgl::POSITION)) *= vec;
+    }
+}
+
+void lwgl::Mesh::scale(float m) {
+    for (int i = 0; i < this->get_num_verts(); i++) {
+        *((glm::vec3*) this->get_vertex(i, lwgl::POSITION)) *= m;
+    }
 }
 
 static void free_buffer(GLuint buffer) {
@@ -170,6 +232,7 @@ void lwgl::Mesh::__print_debug() {
     std::cout << "num verts\t: " << (this->verts.size() / this->vertex_spec_size) << '\n';
     std::cout << "vss\t\t: " << this->vertex_spec_size << '\n';
 
+    printf("Vertexes\n\n  #  ");
     char buffer[52];
     for (LWGL_VERTEX_ATTR attr : this->format) {
         int width = 13 * lwgl::Mesh::get_attr_size(attr) - 1;
@@ -180,6 +243,9 @@ void lwgl::Mesh::__print_debug() {
 
     int c = 0;
     for (float val : this->verts) {
+        if (c % this->vertex_spec_size == 0) {
+            printf("%-5d ", c / this->vertex_spec_size);
+        }
         printf("%10f", val);
         c += 1;
         if (c % this->vertex_spec_size == 0) {
@@ -187,6 +253,11 @@ void lwgl::Mesh::__print_debug() {
         } else {
             std::cout << " | ";
         }
+    }
+
+    printf("\n\nTriangles\n\n");
+    for (glm::ivec3 tri : this->tris) {
+        printf("%d %d %d\n", tri.x, tri.y, tri.z);
     }
 }
 

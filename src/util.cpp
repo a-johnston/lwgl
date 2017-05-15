@@ -8,14 +8,14 @@ lwgl::Mesh lwgl::util::make_cube() {
     lwgl::Mesh cube = lwgl::Mesh({lwgl::POSITION, lwgl::NORMAL, lwgl::TEXCOORD});
 
     glm::vec3 p[] = {
-        glm::vec3(-1, -1, -1),
-        glm::vec3( 1, -1, -1),
         glm::vec3(-1,  1, -1),
         glm::vec3( 1,  1, -1),
-        glm::vec3(-1, -1,  1),
-        glm::vec3( 1, -1,  1),
+        glm::vec3(-1, -1, -1),
+        glm::vec3( 1, -1, -1),
         glm::vec3(-1,  1,  1),
-        glm::vec3( 1,  1,  1)
+        glm::vec3( 1,  1,  1),
+        glm::vec3(-1, -1,  1),
+        glm::vec3( 1, -1,  1)
     };
 
     glm::ivec4 quads[] = {
@@ -38,10 +38,10 @@ lwgl::Mesh lwgl::util::make_plane() {
     lwgl::Mesh mesh = lwgl::Mesh({lwgl::POSITION, lwgl::NORMAL, lwgl::TEXCOORD});
 
     mesh.build_quad(
-        glm::vec3(-1, -1, 0),
         glm::vec3(-1,  1, 0),
-        glm::vec3( 1,  1, 0),
-        glm::vec3( 1, -1, 0)
+        glm::vec3(-1, -1, 0),
+        glm::vec3( 1, -1, 0),
+        glm::vec3( 1,  1, 0)
     );
 
     return mesh;
@@ -74,6 +74,13 @@ void lwgl::util::quit_on_escape_keypress(GLFWwindow *window, int key, int scanco
 }
 
 glm::vec3 lwgl::util::get_normal(glm::vec3 a, glm::vec3 b, glm::vec3 c) {
+    return glm::normalize(glm::cross(b - a, c - a));
+}
+
+glm::vec3 lwgl::util::get_normal(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 d) {
+    return glm::normalize(
+        lwgl::util::get_normal(a, b, c) +
+        lwgl::util::get_normal(a, c, d));
     return glm::normalize(glm::cross(c - a, b - a));
 }
 
@@ -82,9 +89,7 @@ glm::vec3 lwgl::util::get_normal(glm::ivec3 idx, glm::vec3 *p) {
 }
 
 glm::vec3 lwgl::util::get_normal(glm::ivec4 idx, glm::vec3 *p) {
-    return glm::normalize(
-        lwgl::util::get_normal(p[idx.x], p[idx.y], p[idx.z]) +
-        lwgl::util::get_normal(p[idx.x], p[idx.z], p[idx.w]));
+    return lwgl::util::get_normal(p[idx.x], p[idx.y], p[idx.z], p[idx.w]);
 }
 
 #endif
