@@ -161,12 +161,12 @@ GLFWwindow *lwgl::make_window(int width, int height, std::string title) {
 
 void lwgl::start_main_loop() {
     glfwSetTime(0.0);
-    double temp, time = 0.0;
+    float temp, time = 0.0;
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
-        temp = glfwGetTime();
+        temp = (float) glfwGetTime();
         if (scene) {
             scene->step(temp - time);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

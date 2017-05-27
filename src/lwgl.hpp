@@ -14,6 +14,8 @@
 #include <sstream>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <GL/glew.h>
@@ -110,6 +112,9 @@ class Mesh {
         void scale(glm::vec3);
         void scale(float);
 
+        void calculate_normals();
+        void calculate_binormals();
+
         void buffer();
         void unbuffer();
         void draw(Shader shader);
@@ -132,7 +137,7 @@ class Actor {
     public:
         virtual void load() = 0;
         virtual void unload() = 0;
-        virtual void step(double delta_time) = 0;
+        virtual void step(const float delta_time) = 0;
         virtual void draw() = 0;
 };
 
@@ -149,7 +154,7 @@ class Scene {
     private:
         void load();
         void unload();
-        void step(double delta_time);
+        void step(const float delta_time);
         void draw();
 };
 
@@ -173,6 +178,7 @@ class Camera {
 
         void update_view();
         void update_pers();
+        glm::mat4 mvp();
         glm::mat4 mvp(glm::mat4 model);
 };
 

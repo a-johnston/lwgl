@@ -34,6 +34,10 @@ void lwgl::Camera::update_pers() {
     this->vp = this->pers * this->view;
 }
 
+glm::mat4 lwgl::Camera::mvp() {
+    return this->vp;
+}
+
 glm::mat4 lwgl::Camera::mvp(glm::mat4 model) {
     return this->vp * model;
 }
@@ -67,7 +71,7 @@ void lwgl::Scene::unload() {
     }
 }
 
-void lwgl::Scene::step(double delta_time) {
+void lwgl::Scene::step(const float delta_time) {
     for (Actor *a : this->actors) {
         a->step(delta_time);
     }

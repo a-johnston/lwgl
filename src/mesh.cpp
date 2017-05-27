@@ -26,8 +26,8 @@ lwgl::Mesh::Mesh(std::vector<LWGL_VERTEX_ATTR> f) {
         this->vertex_spec_size += lwgl::Mesh::get_attr_size(attr);
     }
 
-    this->vert_vbo = -1;
-    this->tri_vbo = -1;
+    this->vert_vbo = 0;
+    this->tri_vbo = 0;
 
     this->verts = std::vector<float>();
     this->tris = std::vector<glm::ivec3>();
@@ -166,12 +166,12 @@ int lwgl::Mesh::build_quad(glm::ivec4 quad, glm::vec3 *p) {
     return this->build_quad(p[quad.x], p[quad.y], p[quad.z], p[quad.w]);
 }
 
-static GLuint make_buffer(const void *buffer_data, GLsizei buffer_size) {
-    GLuint buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+static void make_buffer(GLuint *buffer, const void *buffer_data, GLsizei buffer_size) {
+    if (*buffer == 0) {
+        glGenBuffers(1, buffer);
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, *buffer);
     glBufferData(GL_ARRAY_BUFFER, buffer_size, buffer_data, GL_STATIC_DRAW);
-    return buffer;
 }
 
 // TODO: this rewrite actually could pretty easily support homogeneous
@@ -205,12 +205,14 @@ static void free_buffer(GLuint buffer) {
 
 void lwgl::Mesh::buffer() {
     this->unbuffer();
-    this->vert_vbo = make_buffer(
+    make_buffer(
+        &this->vert_vbo,
         this->verts.data(),
         this->verts.size() * sizeof(float)
     );
 
-    this->tri_vbo = make_buffer(
+    make_buffer(
+        &this->tri_vbo,
         this->tris.data(),
         this->tris.size() * sizeof(glm::ivec3)
     );
